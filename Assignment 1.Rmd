@@ -1,0 +1,134 @@
+---
+title: "Formative Assignment"
+author: '202359074'
+date: "7 October 2023"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE} 
+# this chunk contains code that sets global options for the entire .Rmd. 
+# we use include=FALSE to suppress it from the top of the document, but it will still appear in the appendix. 
+
+knitr::opts_chunk$set(echo = FALSE) # actually set the global chunk options. 
+# we set echo=FALSE to suppress code such that it by default does not appear throughout the document. 
+# note: this is different from .Rmd default
+```
+# __Assignment 1: Formative__  
+
+The following is my submission towards the formative assignment for the course __MY472: Data for Data Scientist__
+
+## __Exercise 1: Forking Repository__  
+
+The forked version of the assignment template repository can be accessed from *https://github.com/snehamariamthomas/472_assignment_template.git*
+
+## __Exercise 2: Tidy Data__  
+
+For exercise 2, I chose the dataset titled __USArrests__.
+
+_2.1._ __About Dataset__   
+It provides information on violent crime rates in the United States, with 50 observations representing individual states. The dataset includes four variables: urban population percentage, as well as rates of murder, assault, and rape for each state.
+
+_2.2._ __Tidy Status__  
+Based on results of 'head()', the the crime rates were spread across three columns : _murder_, _assault_ and _rape_. Hence, the data was had to be converted into long format wherein the columns murder, assault and rape and their corresponding values were pivoted.
+  
+*The following output captures initial preview of the dataset* :  
+
+``` {r}
+library(datasets)
+data(USArrests) 
+head(USArrests) #Snapshot of data
+```
+
+
+_2.3._ __Tidying Data__  
+
+- Firstly, the data frame had state names as rownames. To convert the rownames to column, I deployed the tibble package.  
+_Source: Wright, Kevin. (2021, November 27). How can I convert row names into the first column?. Stack Overflow. https://stackoverflow.com/a/29511626 _  
+
+- Secondly, i converted the data frame into tibble and transformed it to long format wherein the columns represented the _State_ , _UrbanPop_, _Crime_Type_ and _Crime_Rate_ . Consequently, the column 3 (Crime_Type) captured the different types of crime: murder, assault and rape and column 4 (Crime_Rate) captured the corresponding rates.   
+
+- Thus, the data set has ben tidied as per Hadley Wickham's definition wherein each variable has it own column, each observation has its own row and each observation has its own cell. 
+
+*The following is a snapshot of the tidied data* :  
+  
+
+```{r exercise 2}
+library(datasets)
+library(tibble) #loading package
+library (tidyr) #loading package
+data(USArrests) #loading dataset in R
+options(max.print = 100, width = 100) #To print all columns
+
+#Converting rownames to column
+USArrests <- rownames_to_column(USArrests, var = "State")
+
+#Tidying Data
+
+USArrests_tible <- as_tibble(USArrests)#Converting data frame into tibble 
+USArrests_tidy <- USArrests_tible %>%
+  pivot_longer (c('Murder','Assault',"Rape"), names_to = "Crime_Types", values_to="Crime_Rate") #Converting to long format data 
+
+head(USArrests_tidy) #Reviewing the tidy data
+```
+## __Exercise 3: %>% | group_by() and summarise()| mutate()__  
+  
+For exercise 3, I chose the data set titled __Iris__.  
+  
+_3.1._ __About Dataset__    
+The dataset consists of 150 observations, each capturing sepal and petal measurements (length and width) for three species of Iris flowers: Setosa, Versicolor, and Virginica.
+
+_3.2._ __Process__  
+As per the requirements of the assignment, following three steps were taken to demonstrate knowlege and working of the following:  
+- __Piping Operator (%>%)__ : It was used to find the flower of 'Setosa' type with the longest sepal. The filter function from dplyr package was used for obtaining the results.  
+- __Group_by() and Summarise()__ : The function was used to determine the averages of petal and sepal length and width across the three species of Iris flowers.  
+- __Transformation of numeric variable after having called summarise__ : Based on results of the previous step, I added new columns measuring the average total height and average total width across various species of Iris flowers bu using mutate function. Total is calculated by adding sepal and petal's dimensions for respective species.
+
+``` {r exercise3, echo=TRUE}
+options(max.print = 100, width = 10000) #To print all columns
+library(datasets)
+library(tibble) #loading package
+library(dplyr) #for filter, group_by, summarise and mutate functions
+
+data("iris") #Reading data 
+head(iris) # Reviewing dataset
+sum(iris$Species=="setosa")
+iris_tibble = as_tibble(iris) #Converting dataframe to tibble
+
+# Using piping operator to find Iris flower of Setosa type with longest sepal
+setosa_longest_sepal<- iris_tibble %>% 
+  filter(Species == "setosa") %>%
+  filter(Sepal.Length == max(Sepal.Length, na.rm= TRUE))
+
+setosa_longest_sepal
+
+# Group_by and Summarise to determine the averages of petal and sepal length and width across various species of Iris flowers.
+
+species_avg <- iris_tibble %>% group_by(Species) %>%
+  summarise(avg_petal_length=mean(Petal.Length),
+            avg_sepal_length=mean(Sepal.Length),
+            avg_petal_width =mean(Petal.Width),
+            avg_sepal_width = mean(Sepal.Width))
+
+species_avg
+
+#Transformation of numeric variable after having called summarise
+
+#With the help of mutate function, I added new column measuring the average total height and average total width across various species of Iris flowers. Total is calculated by adding sepal and petal's dimensions for respective species.
+avg_total_length_width= species_avg %>% 
+  mutate(avg_total_length= avg_petal_length + avg_sepal_length, avg_total_width= avg_petal_width + avg_sepal_width)
+
+avg_total_length_width
+```
+__3.4.__ __Discussion__  
+- The original format of data provides information about 150 flowers belonging to one of the three varieties of Iris. However, we need to undertake transformation to know the flowers which have highest or lowest dimensions within three varieties. _setosa_longest_sepal_ shows the flower of setosa type which has the longest sepal. Similarly, we can find for other types using piping operator and filter function.  
+- The transformed data also helps us conduct operations by grouping data. For example, when we grouped data by the types of Iris flowers, we could capture the mean of the speal and petal dimensions. It results in average of petal and sepal's length for each of the variety.  
+- The transformed data also gives us a scope to transform numeric variables. For example, the original data had sepal and petal length for each variety. However, if one wants to know the average total length of flowers under each variety(total length of a flower is sum total of its sepal and petal's length), it is not evident from orignial data. The mutate function enabled us to conduct operations to find average total length and width of each variety of Iris flowers.
+
+## Appendix: All code in this assignment
+
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE} 
+# this chunk generates the complete code appendix. 
+# eval=FALSE tells R not to run (``evaluate'') the code here (it was already run before).
+```
