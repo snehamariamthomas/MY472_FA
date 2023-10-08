@@ -426,7 +426,14 @@ mutate()</strong></h2>
 The dataset consists of 150 observations, each capturing sepal and petal
 measurements (length and width) for three species of Iris flowers:
 Setosa, Versicolor, and Virginica.</p>
-<p><em>3.2.</em> <strong>Process</strong><br />
+<p><em>3.2.</em> <strong>Tidying Data</strong><br />
+Converting it to long format such that each variable has its own column
+and each observation have its own row. After tidying, the new columns
+represent the following: <em>Species</em> column represents the types of
+Iris flowers, <em>Part_Dimensions</em> column represents the part and
+type of measurement being recorded and <em>Values</em> column contains
+the corresponding measurement.</p>
+<p><em>3.3.</em> <strong>Process</strong><br />
 As per the requirements of the assignment, following three steps were
 taken to demonstrate knowlege and working of the following:<br />
 - <strong>Piping Operator (%&gt;%)</strong> : It was used to find the
@@ -438,10 +445,10 @@ three species of Iris flowers.<br />
 - <strong>Transformation of numeric variable after having called
 summarise</strong> : Based on results of the previous step, I added new
 columns measuring the average total height and average total width
-across various species of Iris flowers bu using mutate function. Total
+across various species of Iris flowers by using mutate function. Total
 is calculated by adding sepal and petal’s dimensions for respective
 species.</p>
-<pre class="r"><code>options(max.print = 100, width = 10000) #To print all columns
+<pre class="r"><code>options(max.print = 10000, width = 10000) #To print all columns
 library(datasets)
 library(tibble) #loading package
 library(dplyr) #for filter, group_by, summarise and mutate functions</code></pre>
@@ -462,65 +469,68 @@ head(iris) # Reviewing dataset</code></pre>
 ## 4          4.6         3.1          1.5         0.2  setosa
 ## 5          5.0         3.6          1.4         0.2  setosa
 ## 6          5.4         3.9          1.7         0.4  setosa</code></pre>
-<pre class="r"><code>sum(iris$Species==&quot;setosa&quot;)</code></pre>
-<pre><code>## [1] 50</code></pre>
 <pre class="r"><code>iris_tibble = as_tibble(iris) #Converting dataframe to tibble
 
-# Using piping operator to find Iris flower of Setosa type with longest sepal
-setosa_longest_sepal&lt;- iris_tibble %&gt;% 
-  filter(Species == &quot;setosa&quot;) %&gt;%
-  filter(Sepal.Length == max(Sepal.Length, na.rm= TRUE))
+# Tidying Data
+iris_tidy &lt;- iris_tibble %&gt;% pivot_longer(c(&quot;Petal.Length&quot;,&quot;Sepal.Length&quot;,&quot;Petal.Width&quot;,&quot;Sepal.Width&quot;), names_to= &quot;Part_Dimenstions&quot;, values_to=&quot;Values&quot;)
 
-setosa_longest_sepal</code></pre>
-<pre><code>## # A tibble: 1 × 5
-##   Sepal.Length Sepal.Width Petal.Length Petal.Width Species
-##          &lt;dbl&gt;       &lt;dbl&gt;        &lt;dbl&gt;       &lt;dbl&gt; &lt;fct&gt;  
-## 1          5.8           4          1.2         0.2 setosa</code></pre>
+# Using piping operator to find Iris flower of Setosa type with longest sepal
+setosa_longest_sepal&lt;- iris_tidy %&gt;% 
+  filter(Species == &quot;setosa&quot;) %&gt;%
+  filter(Part_Dimenstions == &quot;Sepal.Length&quot;) %&gt;%
+  filter(Values == max (Values, na.rm= TRUE))
+
+setosa_longest_sepal #Printing Setosa type with longest sepal</code></pre>
+<pre><code>## # A tibble: 1 × 3
+##   Species Part_Dimenstions Values
+##   &lt;fct&gt;   &lt;chr&gt;             &lt;dbl&gt;
+## 1 setosa  Sepal.Length        5.8</code></pre>
 <pre class="r"><code># Group_by and Summarise to determine the averages of petal and sepal length and width across various species of Iris flowers.
 
-species_avg &lt;- iris_tibble %&gt;% group_by(Species) %&gt;%
-  summarise(avg_petal_length=mean(Petal.Length),
-            avg_sepal_length=mean(Sepal.Length),
-            avg_petal_width =mean(Petal.Width),
-            avg_sepal_width = mean(Sepal.Width))
+species_avg &lt;- iris_tidy %&gt;% group_by(Species) %&gt;%
+  summarise(avg_petal_length=mean(Values[Part_Dimenstions == &quot;Petal.Length&quot;]),
+            avg_sepal_length=mean(Values[Part_Dimenstions == &quot;Sepal.Length&quot;]),
+            avg_petal_width =mean(Values[Part_Dimenstions == &quot;Petal.Width&quot;]),
+            avg_sepal_width = mean(Values[Part_Dimenstions == &quot;Sepal.Length&quot;]))
 
-species_avg</code></pre>
+species_avg #averages of petal and sepal length and width across various species of Iris flowers</code></pre>
 <pre><code>## # A tibble: 3 × 5
 ##   Species    avg_petal_length avg_sepal_length avg_petal_width avg_sepal_width
 ##   &lt;fct&gt;                 &lt;dbl&gt;            &lt;dbl&gt;           &lt;dbl&gt;           &lt;dbl&gt;
-## 1 setosa                 1.46             5.01           0.246            3.43
-## 2 versicolor             4.26             5.94           1.33             2.77
-## 3 virginica              5.55             6.59           2.03             2.97</code></pre>
+## 1 setosa                 1.46             5.01           0.246            5.01
+## 2 versicolor             4.26             5.94           1.33             5.94
+## 3 virginica              5.55             6.59           2.03             6.59</code></pre>
 <pre class="r"><code>#Transformation of numeric variable after having called summarise
 
 #With the help of mutate function, I added new column measuring the average total height and average total width across various species of Iris flowers. Total is calculated by adding sepal and petal&#39;s dimensions for respective species.
 avg_total_length_width= species_avg %&gt;% 
   mutate(avg_total_length= avg_petal_length + avg_sepal_length, avg_total_width= avg_petal_width + avg_sepal_width)
 
-avg_total_length_width</code></pre>
+avg_total_length_width #adds the average total height and average total width across various species of Iris flowers to tibble</code></pre>
 <pre><code>## # A tibble: 3 × 7
 ##   Species    avg_petal_length avg_sepal_length avg_petal_width avg_sepal_width avg_total_length avg_total_width
 ##   &lt;fct&gt;                 &lt;dbl&gt;            &lt;dbl&gt;           &lt;dbl&gt;           &lt;dbl&gt;            &lt;dbl&gt;           &lt;dbl&gt;
-## 1 setosa                 1.46             5.01           0.246            3.43             6.47            3.67
-## 2 versicolor             4.26             5.94           1.33             2.77            10.2             4.10
-## 3 virginica              5.55             6.59           2.03             2.97            12.1             5</code></pre>
+## 1 setosa                 1.46             5.01           0.246            5.01             6.47            5.25
+## 2 versicolor             4.26             5.94           1.33             5.94            10.2             7.26
+## 3 virginica              5.55             6.59           2.03             6.59            12.1             8.61</code></pre>
 <p><strong>3.4.</strong> <strong>Discussion</strong><br />
 - The original format of data provides information about 150 flowers
 belonging to one of the three varieties of Iris. However, we need to
-undertake transformation to know the flowers which have highest or
-lowest dimensions within three varieties. <em>setosa_longest_sepal</em>
-shows the flower of setosa type which has the longest sepal. Similarly,
-we can find for other types using piping operator and filter
-function.<br />
+undertake transformation to know the specifics of each type. For
+example, the highest or lowest dimensions within the three varieties.
+<em>setosa_longest_sepal</em> shows the flower of setosa type which has
+the longest sepal. Similarly, we can find for other types using piping
+operator and filter function.<br />
 - The transformed data also helps us conduct operations by grouping
 data. For example, when we grouped data by the types of Iris flowers, we
-could capture the mean of the speal and petal dimensions. It results in
-average of petal and sepal’s length for each of the variety.<br />
+could capture the mean of the sepal and petal dimensions for each type.
+Such a grouping, helps to understand the dynamics of subgroups within
+data.<br />
 - The transformed data also gives us a scope to transform numeric
 variables. For example, the original data had sepal and petal length for
 each variety. However, if one wants to know the average total length of
 flowers under each variety(total length of a flower is sum total of its
-sepal and petal’s length), it is not evident from orignial data. The
+sepal and petal’s length), it is not evident from the original data. The
 mutate function enabled us to conduct operations to find average total
 length and width of each variety of Iris flowers.</p>
 </div>
@@ -551,32 +561,35 @@ USArrests_tidy &lt;- USArrests_tible %&gt;%
   pivot_longer (c(&#39;Murder&#39;,&#39;Assault&#39;,&quot;Rape&quot;), names_to = &quot;Crime_Types&quot;, values_to=&quot;Crime_Rate&quot;) #Converting to long format data 
 
 head(USArrests_tidy) #Reviewing the tidy data
-options(max.print = 100, width = 10000) #To print all columns
+options(max.print = 10000, width = 10000) #To print all columns
 library(datasets)
 library(tibble) #loading package
 library(dplyr) #for filter, group_by, summarise and mutate functions
 
 data(&quot;iris&quot;) #Reading data 
 head(iris) # Reviewing dataset
-sum(iris$Species==&quot;setosa&quot;)
 iris_tibble = as_tibble(iris) #Converting dataframe to tibble
 
-# Using piping operator to find Iris flower of Setosa type with longest sepal
-setosa_longest_sepal&lt;- iris_tibble %&gt;% 
-  filter(Species == &quot;setosa&quot;) %&gt;%
-  filter(Sepal.Length == max(Sepal.Length, na.rm= TRUE))
+# Tidying Data
+iris_tidy &lt;- iris_tibble %&gt;% pivot_longer(c(&quot;Petal.Length&quot;,&quot;Sepal.Length&quot;,&quot;Petal.Width&quot;,&quot;Sepal.Width&quot;), names_to= &quot;Part_Dimenstions&quot;, values_to=&quot;Values&quot;)
 
-setosa_longest_sepal
+# Using piping operator to find Iris flower of Setosa type with longest sepal
+setosa_longest_sepal&lt;- iris_tidy %&gt;% 
+  filter(Species == &quot;setosa&quot;) %&gt;%
+  filter(Part_Dimenstions == &quot;Sepal.Length&quot;) %&gt;%
+  filter(Values == max (Values, na.rm= TRUE))
+
+setosa_longest_sepal #Printing Setosa type with longest sepal
 
 # Group_by and Summarise to determine the averages of petal and sepal length and width across various species of Iris flowers.
 
-species_avg &lt;- iris_tibble %&gt;% group_by(Species) %&gt;%
-  summarise(avg_petal_length=mean(Petal.Length),
-            avg_sepal_length=mean(Sepal.Length),
-            avg_petal_width =mean(Petal.Width),
-            avg_sepal_width = mean(Sepal.Width))
+species_avg &lt;- iris_tidy %&gt;% group_by(Species) %&gt;%
+  summarise(avg_petal_length=mean(Values[Part_Dimenstions == &quot;Petal.Length&quot;]),
+            avg_sepal_length=mean(Values[Part_Dimenstions == &quot;Sepal.Length&quot;]),
+            avg_petal_width =mean(Values[Part_Dimenstions == &quot;Petal.Width&quot;]),
+            avg_sepal_width = mean(Values[Part_Dimenstions == &quot;Sepal.Length&quot;]))
 
-species_avg
+species_avg #averages of petal and sepal length and width across various species of Iris flowers
 
 #Transformation of numeric variable after having called summarise
 
@@ -584,7 +597,7 @@ species_avg
 avg_total_length_width= species_avg %&gt;% 
   mutate(avg_total_length= avg_petal_length + avg_sepal_length, avg_total_width= avg_petal_width + avg_sepal_width)
 
-avg_total_length_width
+avg_total_length_width #adds the average total height and average total width across various species of Iris flowers to tibble
 # this chunk generates the complete code appendix. 
 # eval=FALSE tells R not to run (``evaluate&#39;&#39;) the code here (it was already run before).</code></pre>
 </div>
